@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: dugout-polls
+    runtime: node
+    plan: free
+    buildCommand: "echo ready"
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: COACH_PIN
+        generateValue: true
+      - key: TEAM_NAME
+        value: Mill Creek Little League

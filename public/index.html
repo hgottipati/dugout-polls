@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dugout Polls</title>
+  <meta name="description" content="Quick team polls. Share a link, parents vote." />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="/">
+        <span class="mark">
+          <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="18" fill="#f4f1e8"/>
+            <path d="M18 24c8 6 8 10 0 16" fill="none" stroke="#c1121f" stroke-width="2" stroke-linecap="round"/>
+            <path d="M46 24c-8 6-8 10 0 16" fill="none" stroke="#c1121f" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>
+          <h1>Dugout</h1>
+          <p id="team-name">Team polls</p>
+        </span>
+      </a>
+      <nav>
+        <a class="ghost" href="/coach">Coach</a>
+      </nav>
+    </header>
+    <main id="app" class="card"></main>
+  </div>
+  <div id="toast" class="toast hidden"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
