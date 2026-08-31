@@ -1,0 +1,26 @@
+{
+  "name": "dugout-polls",
+  "account_id": "b4408e295caad186927abeae905ce4be",
+  "compatibility_date": "2026-04-01",
+  "main": "src/worker.js",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "TEAM_NAME": "Mill Creek Little League",
+    "COACH_PIN": "dugout"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dugout-polls",
+      "database_id": "3a8771bb-cdc8-429e-b4e4-85cba3fa0190",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

@@ -5,9 +5,13 @@
   "type": "module",
   "description": "Simple share-a-link polls for a Little League team",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "share": "SHARE=1 node server.js"
+    "start": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:local": "wrangler d1 migrations apply dugout-polls --local",
+    "db:remote": "wrangler d1 migrations apply dugout-polls --remote"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   },
   "engines": {
     "node": ">=22"

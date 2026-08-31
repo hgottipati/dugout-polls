@@ -2,62 +2,34 @@
 
 A simple poll site for a Little League team. You make a poll, copy a link, and parents vote on their phones.
 
-Made for Mill Creek Little League parent chats: snacks, practice times, rain makeups, picnic RSVPs.
+Live: **https://dugout-polls.hg-datahive.workers.dev**
 
-## Run it
+Coach PIN is `dugout`.
 
-Needs Node 22+.
+## Use it
 
-```bash
-cd dugout-polls
-node server.js
-```
+1. Open the site and enter the coach PIN.
+2. Create a poll (or tap a template: snacks, practice time, rain makeup, picnic, volunteers).
+3. Copy the link and drop it in the team chat.
+4. Parents vote on their phones. Results show right after.
 
-Open [http://localhost:3456](http://localhost:3456).
+The coach board at `/coach` lists every poll, vote counts, and names if you asked for them.
 
-Coach PIN is `dugout` unless you change it.
+## Deploy (Cloudflare, free)
 
-## Text a live link to parents
-
-Keep this computer awake, then:
+This is a Cloudflare Worker + D1 database. Free plan is plenty for a team chat.
 
 ```bash
-npm run share
+npm install
+npx wrangler d1 migrations apply dugout-polls --remote
+npx wrangler deploy
 ```
 
-That prints a public `https://….trycloudflare.com` URL. Paste that in the team chat. When you stop the app, the public link stops working.
-
-## Settings
-
-Copy `.env.example` to `.env` if you want, or export:
+Local:
 
 ```bash
-PORT=3456
-COACH_PIN=dugout
-TEAM_NAME="Mill Creek Little League"
+npx wrangler d1 migrations apply dugout-polls --local
+npm start
 ```
 
-`TEAM_NAME` is the label under the Dugout logo. `COACH_PIN` is required to create polls and open the coach board. Parents never see it — they only open the share link.
-
-## What it does
-
-- Create a poll (or tap a template)
-- Copy / share a unique link like `/p/abc12xy`
-- Parents pick a choice, optionally leave a name
-- Results show right after they vote
-- Coach board lists every poll, who voted (if names were asked), and lets you close or delete
-
-Votes are stored in `data/dugout.db` on this machine. One vote per browser.
-
-## Deploy for a permanent team URL
-
-GitHub Pages cannot store votes, so this needs a tiny always-on server.
-
-Easiest path: create a [Render](https://render.com) Web Service from this repo.
-
-- Build command: leave empty
-- Start command: `node server.js`
-- Add env vars `COACH_PIN` and `TEAM_NAME`
-- Add a persistent disk mounted at `/opt/render/project/src/data` so polls survive restarts
-
-Then your share links look like `https://your-app.onrender.com/p/….`
+Change the team name or PIN in `wrangler.jsonc` under `vars`, then deploy again.
