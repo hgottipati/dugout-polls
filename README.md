@@ -15,6 +15,8 @@ Coach PIN is `dugout`.
 
 The coach board at `/coach` lists every poll, vote counts, and names if you asked for them.
 
+Give each poll a **title** (the team, season, or anything you want to group by), like `Snohomish Summerball 2026`. Tomorrow you can use a different title. The coach board groups polls by that title.
+
 When you create a poll, check **Show results to parents after they vote** if they should see the scoreboard. Uncheck it to keep the tally coach-only. You can flip that later on the coach board.
 
 ## Deploy (Cloudflare, free)

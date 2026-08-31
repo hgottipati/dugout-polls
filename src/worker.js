@@ -58,6 +58,7 @@ async function shapePoll(env, row, { includeVoters = false, voterId = "", includ
   }
   return {
     id: row.id,
+    title: row.title || "",
     question: row.question,
     description: row.description || "",
     options: options.map((opt) => {
@@ -109,6 +110,7 @@ async function handleApi(request, env) {
   if (request.method === "POST" && url.pathname === "/api/polls") {
     const body = await readBody(request);
     if (!isCoach(request, url, env, body)) return json({ error: "Coach PIN required." }, 401);
+    const title = sanitizeText(body.title, 80);
     const question = sanitizeText(body.question, 200);
     const description = sanitizeText(body.description, 400);
     const rawOptions = Array.isArray(body.options) ? body.options : [];
@@ -118,6 +120,7 @@ async function handleApi(request, env) {
         text: sanitizeText(typeof item === "string" ? item : item?.text, 120),
       }))
       .filter((opt) => opt.text);
+    if (!title) return json({ error: "Add a title so you can keep polls straight." }, 400);
     if (!question) return json({ error: "Add a question." }, 400);
     if (options.length < 2) return json({ error: "Add at least two choices." }, 400);
     if (options.length > 8) return json({ error: "Eight choices max." }, 400);
@@ -127,11 +130,12 @@ async function handleApi(request, env) {
     }
     const closesAt = body.closesAt ? new Date(body.closesAt).toISOString() : null;
     await env.DB.prepare(
-      `INSERT INTO polls (id, question, description, options_json, allow_multiple, require_name, closed, created_at, closes_at, show_results)
-       VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
+      `INSERT INTO polls (id, title, question, description, options_json, allow_multiple, require_name, closed, created_at, closes_at, show_results)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
     )
       .bind(
         id,
+        title,
         question,
         description,
         JSON.stringify(options),
@@ -224,6 +228,14 @@ async function handleApi(request, env) {
       await env.DB.prepare("DELETE FROM polls WHERE id = ?").bind(pollId).run();
       return json({ ok: true });
     }
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/coach/titles") {
+    if (!isCoach(request, url, env)) return json({ error: "Coach PIN required." }, 401);
+    const { results } = await env.DB.prepare(
+      "SELECT title, MAX(created_at) AS latest FROM polls WHERE title != '' GROUP BY title ORDER BY latest DESC"
+    ).all();
+    return json({ titles: results.map((row) => row.title) });
   }
 
   if (request.method === "GET" && url.pathname === "/api/coach/polls") {

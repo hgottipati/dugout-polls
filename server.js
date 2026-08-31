@@ -36,6 +36,7 @@ db.exec(`
   PRAGMA journal_mode = WAL;
   CREATE TABLE IF NOT EXISTS polls (
     id TEXT PRIMARY KEY,
+    title TEXT DEFAULT '',
     question TEXT NOT NULL,
     description TEXT DEFAULT '',
     options_json TEXT NOT NULL,
@@ -62,10 +63,15 @@ try {
 } catch {
   // column already exists
 }
+try {
+  db.exec("ALTER TABLE polls ADD COLUMN title TEXT DEFAULT ''");
+} catch {
+  // column already exists
+}
 
 const insertPoll = db.prepare(`
-  INSERT INTO polls (id, question, description, options_json, allow_multiple, require_name, closed, created_at, closes_at, show_results)
-  VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+  INSERT INTO polls (id, title, question, description, options_json, allow_multiple, require_name, closed, created_at, closes_at, show_results)
+  VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
 `);
 const getPoll = db.prepare(`SELECT * FROM polls WHERE id = ?`);
 const listPolls = db.prepare(`SELECT * FROM polls ORDER BY created_at DESC`);
@@ -162,6 +168,7 @@ function shapePoll(row, { includeVoters = false, voterId = "", includeCounts = t
   const youVoted = Boolean(voterId && votes.some((v) => v.voter_id === voterId));
   return {
     id: row.id,
+    title: row.title || "",
     question: row.question,
     description: row.description || "",
     options: options.map((opt) => {
@@ -214,6 +221,7 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/polls") {
     const body = await readBody(req);
     if (!requireCoach(req, res, body)) return;
+    const title = sanitizeText(body.title, 80);
     const question = sanitizeText(body.question, 200);
     const description = sanitizeText(body.description, 400);
     const rawOptions = Array.isArray(body.options) ? body.options : [];
@@ -223,6 +231,7 @@ async function handleApi(req, res, url) {
         text: sanitizeText(typeof item === "string" ? item : item?.text, 120),
       }))
       .filter((opt) => opt.text);
+    if (!title) return send(res, 400, { error: "Add a title so you can keep polls straight." });
     if (!question) return send(res, 400, { error: "Add a question." });
     if (options.length < 2) return send(res, 400, { error: "Add at least two choices." });
     if (options.length > 8) return send(res, 400, { error: "Eight choices max." });
@@ -231,6 +240,7 @@ async function handleApi(req, res, url) {
     const closesAt = body.closesAt ? new Date(body.closesAt).toISOString() : null;
     insertPoll.run(
       id,
+      title,
       question,
       description,
       JSON.stringify(options),
@@ -302,6 +312,17 @@ async function handleApi(req, res, url) {
       deletePoll.run(pollId);
       return send(res, 200, { ok: true });
     }
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/coach/titles") {
+    if (!requireCoach(req, res)) return;
+    const titles = db
+      .prepare(
+        "SELECT title, MAX(created_at) AS latest FROM polls WHERE title != '' GROUP BY title ORDER BY latest DESC"
+      )
+      .all()
+      .map((row) => row.title);
+    return send(res, 200, { titles });
   }
 
   if (req.method === "GET" && url.pathname === "/api/coach/polls") {

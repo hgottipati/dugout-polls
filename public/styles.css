@@ -113,6 +113,22 @@ h2 {
   overflow-wrap: break-word;
 }
 .lede { color: var(--muted); margin: 0 0 18px; }
+.kicker {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--grass);
+}
+.group { margin-top: 8px; }
+.group-head {
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.04em;
+  margin: 18px 0 10px;
+  color: var(--navy);
+}
 
 .templates {
   display: flex;

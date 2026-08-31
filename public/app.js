@@ -2,6 +2,8 @@ const app = document.getElementById("app");
 const toastEl = document.getElementById("toast");
 const PIN_KEY = "dugout-coach-pin";
 const VOTER_KEY = "dugout-voter-id";
+const LAST_TITLE_KEY = "dugout-last-title";
+const TITLES_KEY = "dugout-titles";
 
 const TEMPLATES = [
   {
@@ -56,6 +58,33 @@ function coachPin() {
 
 function setCoachPin(pin) {
   sessionStorage.setItem(PIN_KEY, pin);
+}
+
+function rememberedTitles() {
+  try {
+    return JSON.parse(localStorage.getItem(TITLES_KEY) || "[]").filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function rememberTitle(title) {
+  if (!title) return;
+  localStorage.setItem(LAST_TITLE_KEY, title);
+  const next = [title, ...rememberedTitles().filter((item) => item !== title)].slice(0, 10);
+  localStorage.setItem(TITLES_KEY, JSON.stringify(next));
+}
+
+function pollHeading(poll) {
+  return `
+    ${poll.title ? `<p class="kicker">${escapeHtml(poll.title)}</p>` : ""}
+    <h2>${escapeHtml(poll.question)}</h2>
+    ${poll.description ? `<p class="lede">${escapeHtml(poll.description)}</p>` : ""}
+  `;
+}
+
+function setHeaderLabel(text) {
+  document.getElementById("team-name").textContent = text || "Team polls";
 }
 
 function toast(message) {
@@ -124,6 +153,31 @@ function pinGate(next) {
   });
 }
 
+async function fillTitleChoices() {
+  let titles = rememberedTitles();
+  try {
+    const data = await api("/api/coach/titles");
+    titles = [...new Set([...(data.titles || []), ...titles])];
+  } catch {
+    // local list is enough
+  }
+  const list = app.querySelector("#title-list");
+  const chips = app.querySelector("#title-chips");
+  if (!list || !chips) return;
+  list.innerHTML = titles.map((title) => `<option value="${escapeHtml(title)}"></option>`).join("");
+  chips.innerHTML = "";
+  titles.forEach((title) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.textContent = title;
+    chip.addEventListener("click", () => {
+      app.querySelector("#title").value = title;
+    });
+    chips.appendChild(chip);
+  });
+}
+
 function optionInputs(values = ["", ""]) {
   return values
     .map(
@@ -138,11 +192,18 @@ function optionInputs(values = ["", ""]) {
 
 function renderHome() {
   if (!coachPin()) return pinGate(renderHome);
+  setHeaderLabel("Team polls");
+  const lastTitle = localStorage.getItem(LAST_TITLE_KEY) || "";
   app.innerHTML = `
     <h2>Ask the parents</h2>
     <p class="lede">Write a quick poll, copy the link, drop it in the team chat.</p>
-    <div class="templates" id="templates"></div>
     <form id="create">
+      <label for="title">Title</label>
+      <input id="title" type="text" maxlength="80" list="title-list" placeholder="Snohomish Summerball 2026" value="${escapeHtml(lastTitle)}" required />
+      <datalist id="title-list"></datalist>
+      <div class="templates" id="title-chips"></div>
+      <p class="meta">Question templates</p>
+      <div class="templates" id="templates"></div>
       <label for="question">Question</label>
       <input id="question" type="text" maxlength="200" placeholder="Who can bring snacks Saturday?" required />
       <label for="description">Optional note</label>
@@ -165,6 +226,8 @@ function renderHome() {
       <p id="err" class="error hidden"></p>
     </form>
   `;
+
+  fillTitleChoices();
 
   const templates = app.querySelector("#templates");
   TEMPLATES.forEach((tpl) => {
@@ -206,6 +269,7 @@ function renderHome() {
       const poll = await api("/api/polls", {
         method: "POST",
         body: {
+          title: app.querySelector("#title").value,
           question: app.querySelector("#question").value,
           description: app.querySelector("#description").value,
           options,
@@ -215,6 +279,7 @@ function renderHome() {
           closesAt: closes ? new Date(closes).toISOString() : null,
         },
       });
+      rememberTitle(poll.title);
       history.pushState({}, "", `/p/${poll.id}`);
       renderCreated(poll);
     } catch (error) {
@@ -229,8 +294,10 @@ function pollUrl(id) {
 }
 
 function renderCreated(poll) {
+  setHeaderLabel(poll.title);
   const url = pollUrl(poll.id);
   app.innerHTML = `
+    ${poll.title ? `<p class="kicker">${escapeHtml(poll.title)}</p>` : ""}
     <h2>Link is ready</h2>
     <p class="lede">Text this to the team. Parents tap, vote, done.</p>
     <div class="share-box" id="link">${escapeHtml(url)}</div>
@@ -322,9 +389,9 @@ function canSeeResults(poll) {
 }
 
 function renderThanks(poll) {
+  setHeaderLabel(poll.title);
   app.innerHTML = `
-    <h2>${escapeHtml(poll.question)}</h2>
-    ${poll.description ? `<p class="lede">${escapeHtml(poll.description)}</p>` : ""}
+    ${pollHeading(poll)}
     <p class="ok">${poll.closed ? "This poll is closed." : "You're in. Thanks for voting."}</p>
     <p class="lede">Coach is keeping the results private for now.</p>
   `;
@@ -336,10 +403,10 @@ function finishVoteView(poll, heading) {
 }
 
 function renderResults(poll, heading = "Here's the count") {
+  setHeaderLabel(poll.title);
   const votes = poll.totalVotes || 0;
   app.innerHTML = `
-    <h2>${escapeHtml(poll.question)}</h2>
-    ${poll.description ? `<p class="lede">${escapeHtml(poll.description)}</p>` : ""}
+    ${pollHeading(poll)}
     <div class="stat-row">
       <div class="stat"><strong>${votes}</strong><span>${votes === 1 ? "vote" : "votes"}</span></div>
       <div class="stat"><strong>${poll.closed ? "Closed" : "Open"}</strong><span>status</span></div>
@@ -367,9 +434,9 @@ async function renderPoll(id) {
     return;
   }
 
+  setHeaderLabel(poll.title);
   app.innerHTML = `
-    <h2>${escapeHtml(poll.question)}</h2>
-    ${poll.description ? `<p class="lede">${escapeHtml(poll.description)}</p>` : ""}
+    ${pollHeading(poll)}
     <p class="meta">${poll.allowMultiple ? "Pick any that apply." : "Pick one."}${poll.requireName ? " Add your name so coach can follow up." : ""}</p>
     ${poll.requireName ? `<label for="name">Your name</label><input id="name" type="text" maxlength="60" placeholder="Alex's parent" />` : ""}
     <div class="options" id="options">
@@ -440,31 +507,51 @@ async function renderCoach() {
     `;
     return;
   }
+  setHeaderLabel("Team polls");
+  data.polls.forEach((poll) => rememberTitle(poll.title));
+  const groups = [];
+  const seen = new Map();
+  for (const poll of data.polls) {
+    const key = poll.title || "Untitled";
+    if (!seen.has(key)) {
+      seen.set(key, []);
+      groups.push([key, seen.get(key)]);
+    }
+    seen.get(key).push(poll);
+  }
   app.innerHTML = `
     <h2>Coach board</h2>
-    <p class="lede">Every poll you've sent out. Copy a link again anytime.</p>
-    <div class="list">
-      ${data.polls
-        .map((poll) => {
-          const names = (poll.voters || [])
-            .map((v) => v.name)
-            .filter((name) => name && name !== "Anonymous");
-          return `
-            <article class="poll-row" data-id="${poll.id}">
-              <h3>${escapeHtml(poll.question)}</h3>
-              <p class="meta">${poll.totalVotes} vote${poll.totalVotes === 1 ? "" : "s"}${poll.closed ? " · closed" : ""} · ${poll.showResults ? "parents can see results" : "results coach-only"}</p>
-              <div class="results compact">${resultsMarkup(poll)}</div>
-              ${names.length ? `<p class="voters">Voted: ${escapeHtml(names.join(", "))}</p>` : ""}
-              <div class="row-actions">
-                <button class="btn quiet copy" type="button">Copy link</button>
-                <button class="btn quiet visibility" type="button">${poll.showResults ? "Hide from parents" : "Show to parents"}</button>
-                <button class="btn quiet toggle" type="button">${poll.closed ? "Reopen" : "Close"}</button>
-                <button class="btn quiet delete" type="button">Delete</button>
-              </div>
-            </article>`;
-        })
-        .join("")}
-    </div>
+    <p class="lede">Polls grouped by title. Copy a link again anytime.</p>
+    ${groups
+      .map(
+        ([title, polls]) => `
+      <section class="group">
+        <h3 class="group-head">${escapeHtml(title)}</h3>
+        <div class="list">
+          ${polls
+            .map((poll) => {
+              const names = (poll.voters || [])
+                .map((v) => v.name)
+                .filter((name) => name && name !== "Anonymous");
+              return `
+                <article class="poll-row" data-id="${poll.id}">
+                  <h3>${escapeHtml(poll.question)}</h3>
+                  <p class="meta">${poll.totalVotes} vote${poll.totalVotes === 1 ? "" : "s"}${poll.closed ? " · closed" : ""} · ${poll.showResults ? "parents can see results" : "results coach-only"}</p>
+                  <div class="results compact">${resultsMarkup(poll)}</div>
+                  ${names.length ? `<p class="voters">Voted: ${escapeHtml(names.join(", "))}</p>` : ""}
+                  <div class="row-actions">
+                    <button class="btn quiet copy" type="button">Copy link</button>
+                    <button class="btn quiet visibility" type="button">${poll.showResults ? "Hide from parents" : "Show to parents"}</button>
+                    <button class="btn quiet toggle" type="button">${poll.closed ? "Reopen" : "Close"}</button>
+                    <button class="btn quiet delete" type="button">Delete</button>
+                  </div>
+                </article>`;
+            })
+            .join("")}
+        </div>
+      </section>`
+      )
+      .join("")}
     <div class="actions"><a class="btn primary" href="/">New poll</a></div>
   `;
   app.querySelectorAll(".poll-row").forEach((row) => {

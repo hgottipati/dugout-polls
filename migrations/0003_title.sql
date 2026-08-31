@@ -1,0 +1,1 @@
+ALTER TABLE polls ADD COLUMN title TEXT DEFAULT '';
