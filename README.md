@@ -15,6 +15,8 @@ Coach PIN is `dugout`.
 
 The coach board at `/coach` lists every poll, vote counts, and names if you asked for them.
 
+When you create a poll, check **Show results to parents after they vote** if they should see the scoreboard. Uncheck it to keep the tally coach-only. You can flip that later on the coach board.
+
 ## Deploy (Cloudflare, free)
 
 This is a Cloudflare Worker + D1 database. Free plan is plenty for a team chat.

@@ -42,6 +42,7 @@ db.exec(`
     allow_multiple INTEGER DEFAULT 0,
     require_name INTEGER DEFAULT 0,
     closed INTEGER DEFAULT 0,
+    show_results INTEGER DEFAULT 1,
     created_at TEXT NOT NULL,
     closes_at TEXT
   );
@@ -56,9 +57,15 @@ db.exec(`
   );
 `);
 
+try {
+  db.exec("ALTER TABLE polls ADD COLUMN show_results INTEGER DEFAULT 1");
+} catch {
+  // column already exists
+}
+
 const insertPoll = db.prepare(`
-  INSERT INTO polls (id, question, description, options_json, allow_multiple, require_name, closed, created_at, closes_at)
-  VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+  INSERT INTO polls (id, question, description, options_json, allow_multiple, require_name, closed, created_at, closes_at, show_results)
+  VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
 `);
 const getPoll = db.prepare(`SELECT * FROM polls WHERE id = ?`);
 const listPolls = db.prepare(`SELECT * FROM polls ORDER BY created_at DESC`);
@@ -68,6 +75,7 @@ const insertVote = db.prepare(`
   VALUES (?, ?, ?, ?, ?)
 `);
 const setClosed = db.prepare(`UPDATE polls SET closed = ? WHERE id = ?`);
+const setShowResults = db.prepare(`UPDATE polls SET show_results = ? WHERE id = ?`);
 const deleteVotes = db.prepare(`DELETE FROM votes WHERE poll_id = ?`);
 const deletePoll = db.prepare(`DELETE FROM polls WHERE id = ?`);
 
@@ -138,7 +146,11 @@ function isClosed(poll) {
   return false;
 }
 
-function shapePoll(row, { includeVoters = false, voterId = "" } = {}) {
+function publicResults(row) {
+  return Number(row.show_results ?? 1) === 1;
+}
+
+function shapePoll(row, { includeVoters = false, voterId = "", includeCounts = true } = {}) {
   const options = JSON.parse(row.options_json);
   const votes = listVotes.all(row.id);
   const counts = Object.fromEntries(options.map((opt) => [opt.id, 0]));
@@ -152,17 +164,18 @@ function shapePoll(row, { includeVoters = false, voterId = "" } = {}) {
     id: row.id,
     question: row.question,
     description: row.description || "",
-    options: options.map((opt) => ({
-      id: opt.id,
-      text: opt.text,
-      votes: counts[opt.id] || 0,
-    })),
+    options: options.map((opt) => {
+      const item = { id: opt.id, text: opt.text };
+      if (includeCounts) item.votes = counts[opt.id] || 0;
+      return item;
+    }),
     allowMultiple: Boolean(row.allow_multiple),
     requireName: Boolean(row.require_name),
+    showResults: publicResults(row),
     closed: isClosed(row),
     createdAt: row.created_at,
     closesAt: row.closes_at,
-    totalVotes: votes.length,
+    totalVotes: includeCounts ? votes.length : undefined,
     youVoted,
     voters: includeVoters
       ? votes.map((v) => ({
@@ -224,12 +237,13 @@ async function handleApi(req, res, url) {
       body.allowMultiple ? 1 : 0,
       body.requireName ? 1 : 0,
       new Date().toISOString(),
-      closesAt
+      closesAt,
+      body.showResults === false ? 0 : 1
     );
-    return send(res, 201, shapePoll(getPoll.get(id)));
+    return send(res, 201, shapePoll(getPoll.get(id), { includeVoters: true, includeCounts: true }));
   }
 
-  const pollMatch = url.pathname.match(/^\/api\/polls\/([a-z0-9]+)(?:\/(vote|close))?$/);
+  const pollMatch = url.pathname.match(/^\/api\/polls\/([a-z0-9]+)(?:\/(vote|close|results))?$/);
   if (pollMatch) {
     const pollId = pollMatch[1];
     const action = pollMatch[2];
@@ -237,8 +251,8 @@ async function handleApi(req, res, url) {
     if (!row) return send(res, 404, { error: "Poll not found." });
 
     if (req.method === "GET" && !action) {
-      const includeVoters = coachPinFrom(req) === COACH_PIN;
-      return send(res, 200, shapePoll(row, { includeVoters, voterId }));
+      const coach = coachPinFrom(req) === COACH_PIN;
+      return send(res, 200, shapePoll(row, { includeVoters: coach, includeCounts: coach || publicResults(row), voterId }));
     }
 
     if (req.method === "POST" && action === "vote") {
@@ -262,14 +276,23 @@ async function handleApi(req, res, url) {
         }
         throw err;
       }
-      return send(res, 200, shapePoll(getPoll.get(pollId), { voterId: id }));
+      const fresh = getPoll.get(pollId);
+      const coach = coachPinFrom(req, body) === COACH_PIN;
+      return send(res, 200, shapePoll(fresh, { voterId: id, includeCounts: coach || publicResults(fresh) }));
     }
 
     if (req.method === "POST" && action === "close") {
       const body = await readBody(req);
       if (!requireCoach(req, res, body)) return;
       setClosed.run(body.closed === false ? 0 : 1, pollId);
-      return send(res, 200, shapePoll(getPoll.get(pollId), { includeVoters: true }));
+      return send(res, 200, shapePoll(getPoll.get(pollId), { includeVoters: true, includeCounts: true }));
+    }
+
+    if (req.method === "POST" && action === "results") {
+      const body = await readBody(req);
+      if (!requireCoach(req, res, body)) return;
+      setShowResults.run(body.showResults === false ? 0 : 1, pollId);
+      return send(res, 200, shapePoll(getPoll.get(pollId), { includeVoters: true, includeCounts: true }));
     }
 
     if (req.method === "DELETE" && !action) {

@@ -39,7 +39,11 @@ function isClosed(poll) {
   return false;
 }
 
-async function shapePoll(env, row, { includeVoters = false, voterId = "" } = {}) {
+function publicResults(row) {
+  return Number(row.show_results ?? 1) === 1;
+}
+
+async function shapePoll(env, row, { includeVoters = false, voterId = "", includeCounts = true } = {}) {
   const options = JSON.parse(row.options_json);
   const { results: votes } = await env.DB.prepare(
     "SELECT voter_id, name, option_ids_json, created_at FROM votes WHERE poll_id = ? ORDER BY created_at"
@@ -56,17 +60,18 @@ async function shapePoll(env, row, { includeVoters = false, voterId = "" } = {})
     id: row.id,
     question: row.question,
     description: row.description || "",
-    options: options.map((opt) => ({
-      id: opt.id,
-      text: opt.text,
-      votes: counts[opt.id] || 0,
-    })),
+    options: options.map((opt) => {
+      const item = { id: opt.id, text: opt.text };
+      if (includeCounts) item.votes = counts[opt.id] || 0;
+      return item;
+    }),
     allowMultiple: Boolean(row.allow_multiple),
     requireName: Boolean(row.require_name),
+    showResults: publicResults(row),
     closed: isClosed(row),
     createdAt: row.created_at,
     closesAt: row.closes_at,
-    totalVotes: votes.length,
+    totalVotes: includeCounts ? votes.length : undefined,
     youVoted: Boolean(voterId && votes.some((v) => v.voter_id === voterId)),
     voters: includeVoters
       ? votes.map((v) => ({
@@ -122,8 +127,8 @@ async function handleApi(request, env) {
     }
     const closesAt = body.closesAt ? new Date(body.closesAt).toISOString() : null;
     await env.DB.prepare(
-      `INSERT INTO polls (id, question, description, options_json, allow_multiple, require_name, closed, created_at, closes_at)
-       VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`
+      `INSERT INTO polls (id, question, description, options_json, allow_multiple, require_name, closed, created_at, closes_at, show_results)
+       VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`
     )
       .bind(
         id,
@@ -133,24 +138,28 @@ async function handleApi(request, env) {
         body.allowMultiple ? 1 : 0,
         body.requireName ? 1 : 0,
         new Date().toISOString(),
-        closesAt
+        closesAt,
+        body.showResults === false ? 0 : 1
       )
       .run();
     const row = await env.DB.prepare("SELECT * FROM polls WHERE id = ?").bind(id).first();
-    return json(await shapePoll(env, row), 201);
+    return json(await shapePoll(env, row, { includeVoters: true, includeCounts: true }), 201);
   }
 
-  const pollMatch = url.pathname.match(/^\/api\/polls\/([a-z0-9]+)(?:\/(vote|close))?$/);
+  const pollMatch = url.pathname.match(/^\/api\/polls\/([a-z0-9]+)(?:\/(vote|close|results))?$/);
   if (pollMatch) {
     const pollId = pollMatch[1];
     const action = pollMatch[2];
     const row = await env.DB.prepare("SELECT * FROM polls WHERE id = ?").bind(pollId).first();
     if (!row) return json({ error: "Poll not found." }, 404);
+    const coach = isCoach(request, url, env);
 
     if (request.method === "GET" && !action) {
+      const includeCounts = coach || publicResults(row);
       return json(
         await shapePoll(env, row, {
-          includeVoters: isCoach(request, url, env),
+          includeVoters: coach,
+          includeCounts,
           voterId,
         })
       );
@@ -184,7 +193,8 @@ async function handleApi(request, env) {
         throw err;
       }
       const fresh = await env.DB.prepare("SELECT * FROM polls WHERE id = ?").bind(pollId).first();
-      return json(await shapePoll(env, fresh, { voterId: id }));
+      const includeCounts = isCoach(request, url, env, body) || publicResults(fresh);
+      return json(await shapePoll(env, fresh, { voterId: id, includeCounts }));
     }
 
     if (request.method === "POST" && action === "close") {
@@ -194,7 +204,17 @@ async function handleApi(request, env) {
         .bind(body.closed === false ? 0 : 1, pollId)
         .run();
       const fresh = await env.DB.prepare("SELECT * FROM polls WHERE id = ?").bind(pollId).first();
-      return json(await shapePoll(env, fresh, { includeVoters: true }));
+      return json(await shapePoll(env, fresh, { includeVoters: true, includeCounts: true }));
+    }
+
+    if (request.method === "POST" && action === "results") {
+      const body = await readBody(request);
+      if (!isCoach(request, url, env, body)) return json({ error: "Coach PIN required." }, 401);
+      await env.DB.prepare("UPDATE polls SET show_results = ? WHERE id = ?")
+        .bind(body.showResults === false ? 0 : 1, pollId)
+        .run();
+      const fresh = await env.DB.prepare("SELECT * FROM polls WHERE id = ?").bind(pollId).first();
+      return json(await shapePoll(env, fresh, { includeVoters: true, includeCounts: true }));
     }
 
     if (request.method === "DELETE" && !action) {

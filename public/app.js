@@ -155,6 +155,7 @@ function renderHome() {
       <div class="toggles">
         <label class="check"><input id="multi" type="checkbox" /> Allow more than one answer</label>
         <label class="check"><input id="need-name" type="checkbox" /> Ask for a parent name</label>
+        <label class="check"><input id="show-results" type="checkbox" checked /> Show results to parents after they vote</label>
       </div>
       <label for="closes">Optional close time</label>
       <input id="closes" type="datetime-local" />
@@ -210,6 +211,7 @@ function renderHome() {
           options,
           allowMultiple: app.querySelector("#multi").checked,
           requireName: app.querySelector("#need-name").checked,
+          showResults: app.querySelector("#show-results").checked,
           closesAt: closes ? new Date(closes).toISOString() : null,
         },
       });
@@ -315,6 +317,24 @@ function animateBars() {
   });
 }
 
+function canSeeResults(poll) {
+  return Boolean(poll.showResults) || typeof poll.options?.[0]?.votes === "number";
+}
+
+function renderThanks(poll) {
+  app.innerHTML = `
+    <h2>${escapeHtml(poll.question)}</h2>
+    ${poll.description ? `<p class="lede">${escapeHtml(poll.description)}</p>` : ""}
+    <p class="ok">${poll.closed ? "This poll is closed." : "You're in. Thanks for voting."}</p>
+    <p class="lede">Coach is keeping the results private for now.</p>
+  `;
+}
+
+function finishVoteView(poll, heading) {
+  if (canSeeResults(poll)) renderResults(poll, heading);
+  else renderThanks(poll);
+}
+
 function renderResults(poll, heading = "Here's the count") {
   const votes = poll.totalVotes || 0;
   app.innerHTML = `
@@ -343,7 +363,7 @@ async function renderPoll(id) {
   }
 
   if (poll.youVoted || poll.closed) {
-    renderResults(poll, poll.closed ? "This one is closed." : "You already voted. Thanks.");
+    finishVoteView(poll, poll.closed ? "This one is closed." : "You already voted. Thanks.");
     return;
   }
 
@@ -394,7 +414,7 @@ async function renderPoll(id) {
           name: app.querySelector("#name")?.value || "",
         },
       });
-      renderResults(result, "You're in. Here's how the team is leaning.");
+      finishVoteView(result, "You're in. Here's how the team is leaning.");
     } catch (error) {
       err.textContent = error.message;
       err.classList.remove("hidden");
@@ -432,11 +452,12 @@ async function renderCoach() {
           return `
             <article class="poll-row" data-id="${poll.id}">
               <h3>${escapeHtml(poll.question)}</h3>
-              <p class="meta">${poll.totalVotes} vote${poll.totalVotes === 1 ? "" : "s"}${poll.closed ? " · closed" : ""}</p>
+              <p class="meta">${poll.totalVotes} vote${poll.totalVotes === 1 ? "" : "s"}${poll.closed ? " · closed" : ""} · ${poll.showResults ? "parents can see results" : "results coach-only"}</p>
               <div class="results compact">${resultsMarkup(poll)}</div>
               ${names.length ? `<p class="voters">Voted: ${escapeHtml(names.join(", "))}</p>` : ""}
               <div class="row-actions">
                 <button class="btn quiet copy" type="button">Copy link</button>
+                <button class="btn quiet visibility" type="button">${poll.showResults ? "Hide from parents" : "Show to parents"}</button>
                 <button class="btn quiet toggle" type="button">${poll.closed ? "Reopen" : "Close"}</button>
                 <button class="btn quiet delete" type="button">Delete</button>
               </div>
@@ -451,6 +472,12 @@ async function renderCoach() {
     row.querySelector(".copy").addEventListener("click", async () => {
       await navigator.clipboard.writeText(pollUrl(id));
       toast("Link copied.");
+    });
+    row.querySelector(".visibility").addEventListener("click", async () => {
+      const showResults = row.querySelector(".visibility").textContent === "Show to parents";
+      await api(`/api/polls/${id}/results`, { method: "POST", body: { showResults } });
+      toast(showResults ? "Parents can see the scoreboard." : "Results are coach-only.");
+      renderCoach();
     });
     row.querySelector(".toggle").addEventListener("click", async () => {
       const closed = row.querySelector(".toggle").textContent === "Close";

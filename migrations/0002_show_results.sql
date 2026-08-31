@@ -1,0 +1,1 @@
+ALTER TABLE polls ADD COLUMN show_results INTEGER DEFAULT 1;
