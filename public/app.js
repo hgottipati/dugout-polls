@@ -257,29 +257,80 @@ function renderCreated(poll) {
   );
 }
 
+function rankedResults(poll) {
+  const high = Math.max(0, ...poll.options.map((opt) => opt.votes));
+  const total = poll.totalVotes || 0;
+  const sorted = poll.options
+    .map((opt, index) => ({ ...opt, index }))
+    .sort((a, b) => b.votes - a.votes || a.index - b.index);
+  let place = 0;
+  let prev = null;
+  return sorted.map((opt, i) => {
+    if (opt.votes !== prev) place = i + 1;
+    prev = opt.votes;
+    return {
+      ...opt,
+      place,
+      leading: high > 0 && opt.votes === high,
+      pct: total ? Math.round((opt.votes / total) * 100) : 0,
+      width: total ? (opt.votes / total) * 100 : 0,
+    };
+  });
+}
+
+function resultsMarkup(poll) {
+  return rankedResults(poll)
+    .map((opt) => {
+      const extras = [
+        opt.leading ? "leading" : "",
+        !opt.leading && opt.place === 2 ? "place-2" : "",
+        !opt.leading && opt.place === 3 ? "place-3" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return `
+        <article class="result-card ${extras}">
+          <div class="result-head">
+            <span class="place">${opt.place}</span>
+            <div class="result-label">
+              <span class="choice-name">${escapeHtml(opt.text)}</span>
+              ${opt.leading ? `<span class="tag-lead">Leading</span>` : ""}
+            </div>
+            <div class="result-count">
+              <strong>${opt.votes}</strong>
+              <em>${opt.pct}%</em>
+            </div>
+          </div>
+          <div class="bar-track"><div class="bar-fill" data-width="${opt.width}%"></div></div>
+        </article>`;
+    })
+    .join("");
+}
+
+function animateBars() {
+  requestAnimationFrame(() => {
+    app.querySelectorAll(".bar-fill[data-width]").forEach((el) => {
+      el.style.width = el.dataset.width;
+    });
+  });
+}
+
 function renderResults(poll, heading = "Here's the count") {
-  const max = Math.max(1, ...poll.options.map((opt) => opt.votes));
-  const winner = Math.max(0, ...poll.options.map((opt) => opt.votes));
+  const votes = poll.totalVotes || 0;
   app.innerHTML = `
     <h2>${escapeHtml(poll.question)}</h2>
-    <p class="meta">${poll.totalVotes} vote${poll.totalVotes === 1 ? "" : "s"}${poll.closed ? " · closed" : ""}</p>
-    ${poll.options
-      .map(
-        (opt) => `
-        <div class="bar-row ${opt.votes === winner && winner > 0 ? "winner" : ""}">
-          <div class="bar-top">
-            <span>${escapeHtml(opt.text)}</span>
-            <span>${opt.votes}</span>
-          </div>
-          <div class="bar-track"><div class="bar-fill" style="width:${(opt.votes / max) * 100}%"></div></div>
-        </div>`
-      )
-      .join("")}
+    ${poll.description ? `<p class="lede">${escapeHtml(poll.description)}</p>` : ""}
+    <div class="stat-row">
+      <div class="stat"><strong>${votes}</strong><span>${votes === 1 ? "vote" : "votes"}</span></div>
+      <div class="stat"><strong>${poll.closed ? "Closed" : "Open"}</strong><span>status</span></div>
+    </div>
+    <div class="results">${resultsMarkup(poll)}</div>
     <p class="ok">${escapeHtml(heading)}</p>
     <div class="actions">
       <a class="btn quiet" href="/">Make another poll</a>
     </div>
   `;
+  animateBars();
 }
 
 async function renderPoll(id) {
@@ -382,7 +433,7 @@ async function renderCoach() {
             <article class="poll-row" data-id="${poll.id}">
               <h3>${escapeHtml(poll.question)}</h3>
               <p class="meta">${poll.totalVotes} vote${poll.totalVotes === 1 ? "" : "s"}${poll.closed ? " · closed" : ""}</p>
-              ${poll.options.map((opt) => `<div>${escapeHtml(opt.text)} — <strong>${opt.votes}</strong></div>`).join("")}
+              <div class="results compact">${resultsMarkup(poll)}</div>
               ${names.length ? `<p class="voters">Voted: ${escapeHtml(names.join(", "))}</p>` : ""}
               <div class="row-actions">
                 <button class="btn quiet copy" type="button">Copy link</button>
@@ -412,6 +463,7 @@ async function renderCoach() {
       renderCoach();
     });
   });
+  animateBars();
 }
 
 async function boot() {

@@ -110,6 +110,7 @@ h2 {
   font-size: 34px;
   letter-spacing: 0.04em;
   margin: 0 0 6px;
+  overflow-wrap: break-word;
 }
 .lede { color: var(--muted); margin: 0 0 18px; }
 
@@ -235,23 +236,138 @@ textarea { min-height: 72px; resize: vertical; }
 .option.selected { border-color: var(--grass); background: #eef8f1; box-shadow: inset 0 0 0 1px var(--grass); }
 .option:disabled { cursor: default; }
 
-.bar-row { margin: 10px 0 14px; }
-.bar-top { display: flex; justify-content: space-between; font-weight: 800; gap: 12px; }
-.bar-track {
-  height: 12px;
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 4px 0 16px;
+}
+.stat {
+  background: #f7f2e7;
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+.stat strong {
+  display: block;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 34px;
+  letter-spacing: 0.04em;
+  line-height: 0.95;
+}
+.stat span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.results { display: grid; gap: 12px; }
+.result-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px 16px 16px;
+}
+.result-card.leading {
+  background: linear-gradient(180deg, #fff8e6 0%, #fffdf7 72%);
+  border-color: #e0c36a;
+  box-shadow: 0 10px 24px rgba(201, 162, 39, 0.16);
+}
+.result-head {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) max-content;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.place {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 22px;
   background: #efe8d8;
+  color: var(--navy);
+}
+.result-card.leading .place {
+  background: var(--dirt);
+  color: #fff;
+}
+.result-card.place-2 .place { background: var(--navy); color: #fff; }
+.result-card.place-3 .place { background: var(--grass); color: #fff; }
+.choice-name {
+  display: block;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.tag-lead {
+  display: inline-block;
+  margin-top: 4px;
+  background: var(--dirt);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.result-count {
+  text-align: right;
+  white-space: nowrap;
+}
+.result-count strong {
+  display: block;
+  font-family: "Bebas Neue", sans-serif;
+  font-size: 38px;
+  line-height: 0.85;
+  color: var(--navy);
+}
+.result-count em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+.bar-track {
+  height: 22px;
+  background: #f3eee3;
   border-radius: 999px;
   overflow: hidden;
-  margin-top: 6px;
 }
 .bar-fill {
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, var(--grass), #74c69d);
   border-radius: inherit;
-  transition: width 0.4s ease;
+  background: linear-gradient(90deg, #1b4332, #52b788);
+  position: relative;
+  transition: width 0.75s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.bar-row.winner .bar-fill { background: linear-gradient(90deg, var(--dirt), #e9c46a); }
+.bar-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent 0 7px,
+    rgba(255, 255, 255, 0.14) 7px 10px
+  );
+}
+.result-card.leading .bar-fill { background: linear-gradient(90deg, #9c7a12, #e9c46a); }
+.result-card.place-2 .bar-fill { background: linear-gradient(90deg, #102a43, #486581); }
+.result-card.place-3 .bar-fill { background: linear-gradient(90deg, #2d6a4f, #74c69d); }
+
+.results.compact { gap: 8px; }
+.results.compact .result-card { padding: 10px 12px 12px; }
+.results.compact .result-head { margin-bottom: 8px; gap: 8px; grid-template-columns: 28px minmax(0, 1fr) 44px; }
+.results.compact .place { width: 28px; height: 28px; font-size: 16px; }
+.results.compact .result-count strong { font-size: 26px; }
+.results.compact .bar-track { height: 10px; }
+.results.compact .tag-lead { display: none; }
 
 .meta { color: var(--muted); font-size: 14px; font-weight: 700; margin: 0 0 14px; }
 
@@ -286,4 +402,23 @@ textarea { min-height: 72px; resize: vertical; }
   .top { align-items: flex-start; }
   h2 { font-size: 28px; }
   .card { padding: 18px 16px 18px 22px; }
+  .result-head {
+    grid-template-columns: 32px minmax(0, 1fr);
+    grid-template-areas:
+      "place name"
+      "place count";
+    align-items: start;
+    gap: 4px 8px;
+  }
+  .place { grid-area: place; align-self: center; width: 32px; height: 32px; font-size: 18px; }
+  .result-label { grid-area: name; }
+  .result-count {
+    grid-area: count;
+    text-align: left;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .result-count strong { font-size: 24px; }
+  .stat strong { font-size: 28px; }
 }
