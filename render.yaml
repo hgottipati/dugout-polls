@@ -11,4 +11,4 @@ services:
       - key: COACH_PIN
         generateValue: true
       - key: TEAM_NAME
-        value: Mill Creek Little League
+        value: Team polls

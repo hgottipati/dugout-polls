@@ -27,7 +27,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_DIR = path.join(__dirname, "data");
 const PORT = Number(process.env.PORT) || 3456;
 const COACH_PIN = process.env.COACH_PIN || "dugout";
-const TEAM_NAME = process.env.TEAM_NAME || "Mill Creek Little League";
+const TEAM_NAME = process.env.TEAM_NAME || "Team polls";
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 

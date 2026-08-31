@@ -12,7 +12,7 @@
     "enabled": true
   },
   "vars": {
-    "TEAM_NAME": "Mill Creek Little League",
+    "TEAM_NAME": "Team polls",
     "COACH_PIN": "dugout"
   },
   "d1_databases": [

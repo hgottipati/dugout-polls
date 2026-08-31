@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Simple share-a-link polls for a Little League team",
+  "description": "Simple share-a-link polls for a team",
   "scripts": {
     "start": "wrangler dev",
     "deploy": "wrangler deploy",

@@ -86,7 +86,7 @@ async function readBody(request) {
 
 async function handleApi(request, env) {
   const url = new URL(request.url);
-  const team = env.TEAM_NAME || "Mill Creek Little League";
+  const team = env.TEAM_NAME || "Team polls";
   const voterId = request.headers.get("x-voter-id") || url.searchParams.get("voter") || "";
 
   if (request.method === "GET" && url.pathname === "/api/health") {

@@ -1,6 +1,6 @@
 # Dugout Polls
 
-A simple poll site for a Little League team. You make a poll, copy a link, and parents vote on their phones.
+A simple poll site. You make a poll, copy a link, and people vote on their phones.
 
 Live: **https://dugout-polls.hg-datahive.workers.dev**
 
@@ -32,4 +32,4 @@ npx wrangler d1 migrations apply dugout-polls --local
 npm start
 ```
 
-Change the team name or PIN in `wrangler.jsonc` under `vars`, then deploy again.
+Change the PIN in `wrangler.jsonc` under `vars`, then deploy again.
