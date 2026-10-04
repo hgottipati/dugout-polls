@@ -574,17 +574,17 @@ function renderLanding() {
         <a class="btn hero-quiet" href="/new?tpl=qa">Open a Q&amp;A</a>
       </div>
     </section>
-    <section class="demo-sheet" aria-label="Example snack sign-up">
-      <p class="kicker">Example</p>
+    <section class="demo-sheet" aria-label="Sample snack sign-up">
+      <p class="demo-badge">Sample</p>
       <h3>Who's bringing snacks?</h3>
-      <p class="meta">12U softball · Spring 2026 · Sign-up sheet</p>
-      <div class="options compact-sheet">
-        <div class="option sheet-slot taken"><span class="choice-name">Sat, March 14</span><span class="slot-meta">Taken · Alex</span></div>
+      <p class="meta">How a sign-up looks after a couple of families grab dates. Not a live poll.</p>
+      <div class="options compact-sheet" aria-hidden="true">
+        <div class="option sheet-slot taken"><span class="choice-name">Sat, March 14</span><span class="slot-meta">Taken</span></div>
         <div class="option sheet-slot open"><span class="choice-name">Sat, March 21</span><span class="slot-meta">Open</span></div>
-        <div class="option sheet-slot taken"><span class="choice-name">Sat, March 28</span><span class="slot-meta">Taken · Jordan</span></div>
+        <div class="option sheet-slot taken"><span class="choice-name">Sat, March 28</span><span class="slot-meta">Taken</span></div>
         <div class="option sheet-slot open"><span class="choice-name">Sat, April 4</span><span class="slot-meta">Open</span></div>
       </div>
-      <p class="meta"><a href="/new?tpl=snack">Make one like this</a></p>
+      <a class="btn navy wide" href="/new?tpl=snack">Make a snack sheet</a>
     </section>
     ${mineMarkup()}
     <section class="play-board">
