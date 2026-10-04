@@ -1,0 +1,1 @@
+ALTER TABLE polls ADD COLUMN edit_code TEXT DEFAULT '';

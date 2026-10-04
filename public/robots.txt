@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://dugoutpolls.com/sitemap.xml

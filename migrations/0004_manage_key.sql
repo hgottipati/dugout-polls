@@ -1,0 +1,1 @@
+ALTER TABLE polls ADD COLUMN manage_key TEXT DEFAULT '';

@@ -8,7 +8,8 @@
     "start": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:local": "wrangler d1 migrations apply dugout-polls --local",
-    "db:remote": "wrangler d1 migrations apply dugout-polls --remote"
+    "db:remote": "wrangler d1 migrations apply dugout-polls --remote",
+    "og": "node scripts/build-og.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

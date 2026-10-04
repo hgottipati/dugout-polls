@@ -4,8 +4,23 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dugout Polls</title>
-  <meta name="description" content="Quick team polls. Share a link, parents vote." />
+  <meta name="description" content="Snack sheets, rainouts, and picnic RSVPs for baseball and softball teams. Share a link. No login." />
+  <meta name="theme-color" content="#16382b" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="canonical" href="https://dugoutpolls.com/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Dugout Polls" />
+  <meta property="og:title" content="Dugout Polls" />
+  <meta property="og:description" content="Snack sheets, rainouts, and picnic RSVPs for baseball and softball teams. Share a link. No login." />
+  <meta property="og:image" content="https://dugoutpolls.com/og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Dugout Polls" />
+  <meta name="twitter:description" content="Snack sheets, rainouts, and picnic RSVPs for baseball and softball teams. Share a link. No login." />
+  <meta name="twitter:image" content="https://dugoutpolls.com/og.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
@@ -23,16 +38,91 @@
           </svg>
         </span>
         <span>
-          <h1>Dugout</h1>
-          <p id="team-name">Team polls</p>
+          <h1>Dugout Polls</h1>
+          <p id="team-name">Share a link</p>
         </span>
       </a>
       <nav>
-        <a class="ghost" href="/coach">Coach</a>
+        <a class="ghost" href="/mine"><span class="nav-wide">Your polls</span><span class="nav-short">Polls</span></a>
+        <a class="ghost" href="/new"><span class="nav-wide">New poll</span><span class="nav-short">New</span></a>
       </nav>
     </header>
     <main id="app" class="card"></main>
   </div>
+  <footer class="site-foot">
+    <div class="foot-inner">
+      <p class="foot-brand">Dugout Polls</p>
+      <p class="foot-about">A free sideline tool for baseball and softball teams. Polls, snack sheets, and Q&amp;A. No login.</p>
+      <nav class="foot-links">
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="mailto:hello@dugoutpolls.com">hello@dugoutpolls.com</a>
+      </nav>
+      <p class="foot-copy">© 2026 Dugout Polls. Made by Hareesh Gottipati. Not affiliated with Little League Baseball or Softball.</p>
+    </div>
+  </footer>
+  <template id="page-about">
+    <article class="legal">
+      <p class="kicker">Dugout Polls</p>
+      <h2>About</h2>
+      <p class="lede">A free sideline tool so coaches and parents can run snack sheets, rainouts, and team Q&amp;A from a link. No app. No login.</p>
+      <p>Built by Hareesh Gottipati, who uses it on the sidelines too. If a poll needs to come down, or you have a question, email <a href="mailto:hello@dugoutpolls.com">hello@dugoutpolls.com</a>.</p>
+      <p class="meta"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
+    </article>
+  </template>
+  <template id="page-privacy">
+    <article class="legal">
+      <p class="kicker">Dugout Polls</p>
+      <h2>Privacy</h2>
+      <p class="lede">Updated October 2026. Plain English, because this is a snack-sheet tool, not a bank.</p>
+      <h3>What this is</h3>
+      <p>Dugout Polls is a free site for coaches and parents. There are no accounts. You make a poll, share a link, people tap.</p>
+      <h3>What we store</h3>
+      <ul>
+        <li>The poll you create: title, question, choices, settings, and the names people type.</li>
+        <li>A voter id in a cookie on that phone, so we can show “you already voted” and let someone change a sign-up.</li>
+        <li>On the creator’s phone, a list of their polls (Your polls) and a backup edit code.</li>
+      </ul>
+      <p>Signup sheets show first names to anyone with the link. Don’t put a child’s last name unless you mean to.</p>
+      <h3>What we don’t do</h3>
+      <p>No login. No ads. We don’t sell your data. We don’t use it to profile families. Hosting is on Cloudflare.</p>
+      <h3>How long it stays</h3>
+      <p>A poll stays until the person who made it deletes it. If you need one taken down and you don’t have it on this phone, email <a href="mailto:hello@dugoutpolls.com">hello@dugoutpolls.com</a>.</p>
+      <h3>Kids</h3>
+      <p>This is for coaches and parents, not for children to use on their own.</p>
+      <p class="meta"><a href="/about">About</a> · <a href="/terms">Terms</a></p>
+    </article>
+  </template>
+  <template id="page-terms">
+    <article class="legal">
+      <p class="kicker">Dugout Polls</p>
+      <h2>Terms</h2>
+      <p class="lede">Updated October 2026. Using the site means you’re okay with this.</p>
+      <h3>The tool</h3>
+      <p>Dugout Polls is free. Anyone with the link can open a poll. You are responsible for what you post and who you send the link to.</p>
+      <h3>No affiliation</h3>
+      <p>Dugout Polls is not affiliated with Little League Baseball, Little League Softball, or any league, team, or governing body.</p>
+      <h3>As-is</h3>
+      <p>The site is provided as-is. We can take down a poll that is abusive, illegal, or breaking these terms. We don’t promise uptime, and we’re not liable for a missed snack Saturday.</p>
+      <h3>Your content</h3>
+      <p>You keep whatever rights you have in the text you type. You give us permission to host it so the link works. Names on a sign-up sheet are visible to everyone with that link.</p>
+      <h3>Contact</h3>
+      <p>Questions or a takedown: email <a href="mailto:hello@dugoutpolls.com">hello@dugoutpolls.com</a>.</p>
+      <p class="meta"><a href="/about">About</a> · <a href="/privacy">Privacy</a></p>
+    </article>
+  </template>
+  <template id="page-not-found">
+    <article class="legal">
+      <p class="kicker">Dugout Polls</p>
+      <h2>Page not found</h2>
+      <p class="lede">That link isn’t here. If you were looking for a poll, it may have been deleted.</p>
+      <div class="actions">
+        <a class="btn primary" href="/new">Create a poll</a>
+        <a class="btn quiet" href="/mine">Your polls</a>
+      </div>
+    </article>
+  </template>
   <div id="toast" class="toast hidden"></div>
   <script src="/app.js"></script>
 </body>

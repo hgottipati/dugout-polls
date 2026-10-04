@@ -6,14 +6,20 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
   },
+  "workers_dev": true,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "dugoutpolls.com", "custom_domain": true },
+    { "pattern": "www.dugoutpolls.com", "custom_domain": true }
+  ],
   "observability": {
     "enabled": true
   },
   "vars": {
-    "TEAM_NAME": "Team polls",
-    "COACH_PIN": "dugout"
+    "TEAM_NAME": "Share a link"
   },
   "d1_databases": [
     {

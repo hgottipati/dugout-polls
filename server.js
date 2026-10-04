@@ -26,8 +26,7 @@ if (fs.existsSync(envFile)) {
 const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_DIR = path.join(__dirname, "data");
 const PORT = Number(process.env.PORT) || 3456;
-const COACH_PIN = process.env.COACH_PIN || "dugout";
-const TEAM_NAME = process.env.TEAM_NAME || "Team polls";
+const TEAM_NAME = process.env.TEAM_NAME || "Share a link";
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
@@ -126,24 +125,6 @@ function readBody(req) {
     });
     req.on("error", reject);
   });
-}
-
-function coachPinFrom(req, body = {}) {
-  return (
-    req.headers["x-coach-pin"] ||
-    body.pin ||
-    new URL(req.url, "http://localhost").searchParams.get("pin") ||
-    ""
-  );
-}
-
-function requireCoach(req, res, body = {}) {
-  const pin = String(coachPinFrom(req, body));
-  if (pin !== COACH_PIN) {
-    send(res, 401, { error: "Coach PIN required." });
-    return false;
-  }
-  return true;
 }
 
 function isClosed(poll) {
@@ -261,8 +242,7 @@ async function handleApi(req, res, url) {
     if (!row) return send(res, 404, { error: "Poll not found." });
 
     if (req.method === "GET" && !action) {
-      const coach = coachPinFrom(req) === COACH_PIN;
-      return send(res, 200, shapePoll(row, { includeVoters: coach, includeCounts: coach || publicResults(row), voterId }));
+      return send(res, 200, shapePoll(row, { includeVoters: false, includeCounts: publicResults(row), voterId }));
     }
 
     if (req.method === "POST" && action === "vote") {
@@ -287,48 +267,20 @@ async function handleApi(req, res, url) {
         throw err;
       }
       const fresh = getPoll.get(pollId);
-      const coach = coachPinFrom(req, body) === COACH_PIN;
-      return send(res, 200, shapePoll(fresh, { voterId: id, includeCounts: coach || publicResults(fresh) }));
+      return send(res, 200, shapePoll(fresh, { voterId: id, includeCounts: publicResults(fresh) }));
     }
 
     if (req.method === "POST" && action === "close") {
-      const body = await readBody(req);
-      if (!requireCoach(req, res, body)) return;
-      setClosed.run(body.closed === false ? 0 : 1, pollId);
-      return send(res, 200, shapePoll(getPoll.get(pollId), { includeVoters: true, includeCounts: true }));
+      return send(res, 401, { error: "You can only manage a poll you created." });
     }
 
     if (req.method === "POST" && action === "results") {
-      const body = await readBody(req);
-      if (!requireCoach(req, res, body)) return;
-      setShowResults.run(body.showResults === false ? 0 : 1, pollId);
-      return send(res, 200, shapePoll(getPoll.get(pollId), { includeVoters: true, includeCounts: true }));
+      return send(res, 401, { error: "You can only manage a poll you created." });
     }
 
     if (req.method === "DELETE" && !action) {
-      const body = await readBody(req).catch(() => ({}));
-      if (!requireCoach(req, res, body)) return;
-      deleteVotes.run(pollId);
-      deletePoll.run(pollId);
-      return send(res, 200, { ok: true });
+      return send(res, 401, { error: "You can only manage a poll you created." });
     }
-  }
-
-  if (req.method === "GET" && url.pathname === "/api/coach/titles") {
-    if (!requireCoach(req, res)) return;
-    const titles = db
-      .prepare(
-        "SELECT title, MAX(created_at) AS latest FROM polls WHERE title != '' GROUP BY title ORDER BY latest DESC"
-      )
-      .all()
-      .map((row) => row.title);
-    return send(res, 200, { titles });
-  }
-
-  if (req.method === "GET" && url.pathname === "/api/coach/polls") {
-    if (!requireCoach(req, res)) return;
-    const polls = listPolls.all().map((row) => shapePoll(row, { includeVoters: true }));
-    return send(res, 200, { team: TEAM_NAME, polls });
   }
 
   send(res, 404, { error: "Not found." });
@@ -346,7 +298,14 @@ const MIME = {
 
 function serveStatic(req, res, url) {
   const clean = decodeURIComponent(url.pathname.split("?")[0]);
-  const isAppRoute = clean === "/" || clean.startsWith("/p/") || clean === "/coach" || clean === "/new";
+  const isAppRoute =
+    clean === "/" ||
+    clean.startsWith("/p/") ||
+    clean === "/new" ||
+    clean === "/mine" ||
+    clean === "/about" ||
+    clean === "/privacy" ||
+    clean === "/terms";
   const relative = isAppRoute ? "/index.html" : clean;
   const filePath = path.normalize(path.join(PUBLIC_DIR, relative));
   if (!filePath.startsWith(PUBLIC_DIR)) {
@@ -382,7 +341,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n  Dugout polls is up for ${TEAM_NAME}`);
-  console.log(`  Coach PIN: ${COACH_PIN}`);
   console.log(`  Local:     http://localhost:${PORT}\n`);
   if (process.env.SHARE === "1") startTunnel();
 });
