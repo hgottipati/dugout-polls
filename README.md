@@ -1,23 +1,22 @@
 # Dugout Polls
 
-A simple poll site. You make a poll, copy a link, and people vote on their phones.
+A simple poll site. Anyone can make a poll, copy a link, and send it. No login.
 
-Live: **https://dugout-polls.hg-datahive.workers.dev**
-
-Coach PIN is `dugout`.
+Live: **https://dugoutpolls.com**
 
 ## Use it
 
-1. Open the site and enter the coach PIN.
-2. Create a poll (or tap a template: snacks, practice time, rain makeup, picnic, volunteers).
-3. Copy the link and drop it in the team chat.
-4. Parents vote on their phones. Results show right after.
+1. Open the site, pick a play (snacks, rainout, volunteers, Q&A), or tap **New poll**.
+2. Copy the link and drop it in Messages, WhatsApp, or GameChanger. The preview card shows a dugout photo plus the actual question.
+3. People vote on their phones. After they vote, they can create their own poll too.
 
-The coach board at `/coach` lists every poll, vote counts, and names if you asked for them.
+**Sign-up sheets** (snacks, volunteer jobs): each date is a slot. Parents see **Open** or **Taken · Alex** before they pick, so two families don't grab the same Saturday. They can change or drop their spots from the same phone. Set spots-per-date to 2 if two families can share a game.
 
-Give each poll a **title** (the team, season, or anything you want to group by), like `Snohomish Summerball 2026`. Tomorrow you can use a different title. The coach board groups polls by that title.
+**Q&A boards** (like Slido): anyone with the link can add a question. The team upvotes. Popular questions rise, answered ones drop to the bottom. Good for parent meetings.
 
-When you create a poll, check **Show results to parents after they vote** if they should see the scoreboard. Uncheck it to keep the tally coach-only. You can flip that later on the coach board.
+After you create a poll you get an **edit code** (like `k7m2-p9qx`). Save it. That code lets you edit from any phone or laptop, even after a reboot or a new browser. The share link is for voters; the code is for you. Tap **I made this poll** and enter the code if this device doesn't remember you.
+
+Polls you create on this phone show up under **Your polls**. There is no site-wide admin board. To take a poll down from another phone, use the backup edit code, or email hello@dugoutpolls.com.
 
 ## Deploy (Cloudflare, free)
 
@@ -35,5 +34,3 @@ Local:
 npx wrangler d1 migrations apply dugout-polls --local
 npm start
 ```
-
-Change the PIN in `wrangler.jsonc` under `vars`, then deploy again.
